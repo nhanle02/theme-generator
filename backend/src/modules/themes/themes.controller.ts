@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ThemesService } from './themes.service';
 import { CreateThemeDto } from './dto/create-theme.dto';
@@ -26,17 +27,29 @@ export class ThemesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.themesService.findOne(+id);
+  findOne(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.themesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateThemeDto: UpdateThemeDto) {
-    return this.themesService.update(+id, updateThemeDto);
+  update(
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body()
+    dto: UpdateThemeDto,
+  ) {
+    return this.themesService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.themesService.remove(+id);
+  remove(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.themesService.remove(id);
   }
 }
