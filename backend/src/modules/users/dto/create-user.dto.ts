@@ -1,7 +1,19 @@
+import { IsEmail, IsString, IsNumber, IsOptional } from 'class-validator';
+
 export class CreateUserDto {
+  @IsString()
+  google_id: string;
+
+  @IsEmail()
   email: string;
+
+  @IsString()
   name: string;
-  google_id?: string;
-  avatar_url?: string;
-  credit_balance?: number;
+
+  @IsString()
+  avatar_url: string;
+
+  @IsOptional()
+  @IsNumber()
+  credit_balance: number;
 }
