@@ -5,20 +5,35 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-
-const jwtSecret = process.env.JWT_SECRET ?? 'fallback-secret';
-
-const jwtExpires = process.env.JWT_EXPIRES_IN ?? '7d';
+import { User } from 'src/database/entities/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule,
+
     PassportModule,
 
-    JwtModule.register({
-      secret: jwtSecret,
+    TypeOrmModule.forFeature([User]),
 
-      signOptions: {
-        expiresIn: jwtExpires as '7d',
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+
+        if (!secret) {
+          throw new Error('JWT_SECRET is missing');
+        }
+
+        return {
+          secret,
+
+          signOptions: {
+            expiresIn: configService.get('JWT_EXPIRES_IN') ?? '7d',
+          },
+        };
       },
     }),
   ],
@@ -27,6 +42,6 @@ const jwtExpires = process.env.JWT_EXPIRES_IN ?? '7d';
 
   providers: [AuthService, JwtStrategy],
 
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

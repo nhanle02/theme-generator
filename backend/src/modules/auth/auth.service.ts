@@ -1,28 +1,84 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 
 import { JwtService } from '@nestjs/jwt';
 
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { Repository } from 'typeorm';
+
+import * as bcrypt from 'bcrypt';
+import { User } from 'src/database/entities/user.entity';
+
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+  ) {}
 
   async register(dto: RegisterDto) {
+    const existingUser = await this.usersRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = this.usersRepository.create({
+      email: dto.email,
+      name: dto.name,
+      password: hashedPassword,
+      provider: 'local',
+      credit_balance: 0,
+    });
+
+    const savedUser = await this.usersRepository.save(user);
+
     return {
-      message: 'register success',
-      data: dto,
+      message: 'Register success',
+      data: {
+        id: savedUser.id,
+        email: savedUser.email,
+        name: savedUser.name,
+      },
     };
   }
 
   async login(dto: LoginDto) {
-    const user = {
-      id: 1,
-      email: dto.email,
-    };
+    const user = await this.usersRepository.findOne({
+      where: { email: dto.email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        provider: true,
+      },
+    });
 
     if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.provider !== 'local') {
+      throw new UnauthorizedException('Please login with Google');
+    }
+
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+
+    if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -31,8 +87,7 @@ export class AuthService {
       email: user.email,
     };
 
-    const accessToken =
-      this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload);
 
     return {
       access_token: accessToken,
