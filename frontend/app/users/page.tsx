@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import CommonDataGrid from "@/components/ui/DataGrid";
 import { GridColDef } from "@mui/x-data-grid";
-import { getUsers } from "@/lib/api";
+import { getUsers } from "@/lib/users.api";
 import Button from "@/components/ui/Button";
 import Avatar from "@mui/material/Avatar";
 

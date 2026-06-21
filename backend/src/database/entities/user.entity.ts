@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type AuthProvider = 'local' | 'google';
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -17,6 +19,7 @@ export class User {
   })
   google_id: string;
 
+  // Email luôn cần
   @Column({
     unique: true,
   })
@@ -27,6 +30,13 @@ export class User {
     select: false,
   })
   password: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['local', 'google'],
+    default: 'local',
+  })
+  provider: AuthProvider;
 
   @Column()
   name: string;

@@ -1,11 +1,43 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL;
 
-export async function getUsers() {
-  const res = await fetch(`${BASE_URL}/users`);
+async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+) {
+  const token =
+    localStorage.getItem(
+      "token",
+    );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch users");
+  const headers = {
+    "Content-Type":
+      "application/json",
+
+    ...(token && {
+      Authorization:
+        `Bearer ${token}`,
+    }),
+
+    ...options.headers,
+  };
+
+  const response =
+    await fetch(
+      `${BASE_URL}${endpoint}`,
+      {
+        ...options,
+        headers,
+      },
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      "Request failed",
+    );
   }
 
-  return res.json();
+  return response.json();
 }
+
+export default apiFetch;
