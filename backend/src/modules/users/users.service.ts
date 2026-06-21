@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/database/entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { CloudinaryService } from '../uploads/cloudinary.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   findAll() {
@@ -53,15 +55,28 @@ export class UsersService {
   create(data: Partial<User>) {
     return this.userRepo.save(data);
   }
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ) {
     const user = await this.userRepo.findOneBy({ id });
 
-    if (!user) return null;
+    if (!user) throw new NotFoundException('User not found');
 
-    const updateData: any = {
-      name: updateUserDto.name,
-      avatar_url: updateUserDto.avatar_url,
-    };
+    const updateData: any = {};
+
+    if (updateUserDto.name) updateData.name = updateUserDto.name;
+
+    // 🔥 upload avatar nếu có file
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        file,
+        'avatars',
+      );
+
+      updateData.avatar_url = uploadResult.secure_url;
+    }
 
     if (updateUserDto.password) {
       updateData.password = await bcrypt.hash(updateUserDto.password, 10);
