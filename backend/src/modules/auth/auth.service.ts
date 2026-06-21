@@ -15,6 +15,7 @@ import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/database/entities/user.entity';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -25,40 +26,69 @@ export class AuthService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existingUser = await this.usersRepository.findOne({
-      where: { email: dto.email },
+  private generateTokens(user: User) {
+    type JwtPayload = {
+      id: number;
+      email: string;
+    };
+
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET!,
+      expiresIn: process.env.JWT_EXPIRES_IN as StringValue,
     });
 
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    const user = this.usersRepository.create({
-      email: dto.email,
-      name: dto.name,
-      password: hashedPassword,
-      provider: 'local',
-      credit_balance: 0,
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET!,
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as StringValue,
     });
-
-    const savedUser = await this.usersRepository.save(user);
 
     return {
-      message: 'Register success',
-      data: {
-        id: savedUser.id,
-        email: savedUser.email,
-        name: savedUser.name,
-      },
+      accessToken,
+      refreshToken,
     };
+  }
+  async register(dto: RegisterDto) {
+    try {
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Email already exists');
+      }
+
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      const user = this.usersRepository.create({
+        email: dto.email,
+        name: dto.name,
+        password: hashedPassword,
+        provider: 'local',
+        credit_balance: 0,
+      });
+
+      const savedUser = await this.usersRepository.save(user);
+
+      return {
+        message: 'Register success',
+        data: savedUser,
+      };
+    } catch (err) {
+      console.error("REGISTER ERROR:", err);
+      throw err;
+    }
   }
 
   async login(dto: LoginDto) {
     const user = await this.usersRepository.findOne({
-      where: { email: dto.email },
+      where: {
+        email: dto.email,
+      },
       select: {
         id: true,
         email: true,
@@ -82,15 +112,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
-      id: user.id,
-      email: user.email,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
+    const tokens = this.generateTokens(user);
+    console.log(tokens);
 
     return {
-      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+
+      ...tokens,
     };
   }
 }

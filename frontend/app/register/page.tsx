@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import Form from "@/components/ui/Form";
@@ -8,15 +11,18 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const router =
+    useRouter();
+
+  const [name, setName] =
+    useState("");
+
   const [email, setEmail] =
     useState("");
 
   const [password, setPassword] =
     useState("");
-
-  const router =
-    useRouter();
 
   async function handleSubmit(
     e: React.FormEvent,
@@ -24,27 +30,22 @@ export default function LoginPage() {
     e.preventDefault();
 
     try {
-      const res =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-          {
-            method: "POST",
-
-            credentials:
-              "include",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body:
-              JSON.stringify({
-                email,
-                password,
-              }),
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type":
+              "application/json",
           },
-        );
+          body: JSON.stringify({
+            email,
+            name,
+            password,
+          }),
+        },
+      );
 
       const data =
         await res.json();
@@ -52,17 +53,17 @@ export default function LoginPage() {
       if (!res.ok) {
         throw new Error(
           data.message ||
-            "Login failed",
+          "Login failed"
         );
       }
-
       router.push(
-        "/users",
+        "/login"
       );
 
-    } catch (error) {
+    } catch (err) {
       console.error(
-        error,
+        "LOGIN ERROR:",
+        err
       );
     }
   }
@@ -70,10 +71,10 @@ export default function LoginPage() {
   return (
     <div
       className="
+      min-h-screen
       flex
       justify-center
       items-center
-      min-h-screen
       "
     >
       <Form
@@ -89,16 +90,26 @@ export default function LoginPage() {
         "
       >
         <h1 className="text-2xl">
-          Login
+          Register
         </h1>
+
+        <Input
+          label="Name"
+          value={name}
+          onChange={(e) =>
+            setName(
+              e.target.value,
+            )
+          }
+        />
 
         <Input
           label="Email"
           type="email"
           value={email}
-          onChange={(e)=>
+          onChange={(e) =>
             setEmail(
-              e.target.value
+              e.target.value,
             )
           }
         />
@@ -107,30 +118,36 @@ export default function LoginPage() {
           label="Password"
           type="password"
           value={password}
-          onChange={(e)=>
+          onChange={(e) =>
             setPassword(
-              e.target.value
+              e.target.value,
             )
           }
         />
-
-        <div className="text-center text-sm">
-          Chưa có tài khoản?{" "}
-          <Link
-            href="/register"
+        <div
             className="
-            text-blue-500
-            hover:underline
+            text-center
+            text-sm
             "
-          >
-            Đăng ký
-          </Link>
+        >
+            Đã có tài khoản?{" "}
+            <Link
+                href="/login"
+                className="
+                text-blue-500
+                hover:underline
+                "
+            >
+                Đăng nhập
+            </Link>
         </div>
-
-        <Button type="submit">
-          Login
+         <Button
+          type="submit"
+        >
+          Register
         </Button>
       </Form>
+      
     </div>
   );
 }

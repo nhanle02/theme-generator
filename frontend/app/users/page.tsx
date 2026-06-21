@@ -6,6 +6,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import { getUsers } from "@/lib/users.api";
 import Button from "@/components/ui/Button";
 import Avatar from "@mui/material/Avatar";
+import { useRouter } from "next/navigation";
 
 type User = {
   id: number;
@@ -21,7 +22,7 @@ type User = {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,6 +38,14 @@ export default function UsersPage() {
 
     fetchData();
   }, []);
+  const handleLogout = async () => {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include", // 🔥 quan trọng
+    });
+
+    router.push("/login");
+  };
 
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
@@ -97,6 +106,10 @@ export default function UsersPage() {
           loading={loading}
         />
       </div>
+
+    <Button variant="danger" onClick={handleLogout}>
+      Logout
+    </Button>
     </div>
   );
 }
