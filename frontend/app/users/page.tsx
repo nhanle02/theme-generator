@@ -85,7 +85,12 @@ export default function UsersPage() {
             }}
           >
             <Button variant="primary">View</Button>
-            <Button variant="secondary">Edit</Button>
+            <Button 
+              variant="secondary"   
+              onClick={() => router.push(`/users/${user.id}/edit`)}
+            >
+              Edit
+            </Button>
             <Button variant="danger">Delete</Button>
           </div>
         );
@@ -95,6 +100,12 @@ export default function UsersPage() {
 
   return (
     <div className="p-6">
+      <Button
+        variant="primary"
+        onClick={() => router.push("/profile")}
+      >
+        Go to Profile
+      </Button>
       <div className="bg-white rounded-xl shadow-md p-4">
         <h2 className="text-2xl font-semibold mb-4">
           Users Management
@@ -107,9 +118,9 @@ export default function UsersPage() {
         />
       </div>
 
-    <Button variant="danger" onClick={handleLogout}>
-      Logout
-    </Button>
+      <Button variant="danger" onClick={handleLogout}>
+        Logout
+      </Button>
     </div>
   );
 }
