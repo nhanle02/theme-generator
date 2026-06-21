@@ -53,35 +53,34 @@ export class AuthService {
     };
   }
   async register(dto: RegisterDto) {
-    try {
-      const existingUser = await this.usersRepository.findOne({
-        where: { email: dto.email },
-      });
+    const existingUser = await this.usersRepository.findOne({
+      where: { email: dto.email },
+    });
 
-      if (existingUser) {
-        throw new ConflictException('Email already exists');
-      }
-
-      const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-      const user = this.usersRepository.create({
-        email: dto.email,
-        name: dto.name,
-        password: hashedPassword,
-        provider: 'local',
-        credit_balance: 0,
-      });
-
-      const savedUser = await this.usersRepository.save(user);
-
-      return {
-        message: 'Register success',
-        data: savedUser,
-      };
-    } catch (err) {
-      console.error("REGISTER ERROR:", err);
-      throw err;
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
     }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = this.usersRepository.create({
+      email: dto.email,
+      name: dto.name,
+      password: hashedPassword,
+      provider: 'local',
+      credit_balance: 0,
+    });
+
+    const savedUser = await this.usersRepository.save(user);
+
+    return {
+      message: 'Register success',
+      data: {
+        id: savedUser.id,
+        email: savedUser.email,
+        name: savedUser.name,
+      },
+    };
   }
 
   async login(dto: LoginDto) {
