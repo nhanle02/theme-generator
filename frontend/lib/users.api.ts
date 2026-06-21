@@ -1,17 +1,14 @@
 export async function getUsers() {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-
-  const text = await res.text(); // 👈 lấy raw response
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/users`,
+    {
+      credentials: "include",
+    }
+  );
 
   if (!res.ok) {
-    throw new Error(`Failed: ${res.status} - ${text}`);
+    throw new Error(await res.text());
   }
 
-  return JSON.parse(text);
+  return res.json();
 }

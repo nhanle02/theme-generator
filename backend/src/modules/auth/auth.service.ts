@@ -15,6 +15,7 @@ import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/database/entities/user.entity';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,32 @@ export class AuthService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
+  private generateTokens(user: User) {
+    type JwtPayload = {
+      id: number;
+      email: string;
+    };
+
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET!,
+      expiresIn: process.env.JWT_EXPIRES_IN as StringValue,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET!,
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as StringValue,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
   async register(dto: RegisterDto) {
     const existingUser = await this.usersRepository.findOne({
       where: { email: dto.email },
@@ -58,7 +85,9 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.usersRepository.findOne({
-      where: { email: dto.email },
+      where: {
+        email: dto.email,
+      },
       select: {
         id: true,
         email: true,
@@ -82,15 +111,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
-      id: user.id,
-      email: user.email,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
+    const tokens = this.generateTokens(user);
+    console.log(tokens);
 
     return {
-      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+
+      ...tokens,
     };
   }
 }

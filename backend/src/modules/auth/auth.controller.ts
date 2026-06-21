@@ -1,4 +1,6 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+
+import type { Response } from 'express';
 
 import { AuthService } from './auth.service';
 
@@ -10,18 +12,50 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(
-    @Body()
-    dto: RegisterDto,
-  ) {
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-  login(
-    @Body()
-    dto: LoginDto,
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true })
+    res: Response,
   ) {
-    return this.authService.login(dto);
+    const result = await this.authService.login(dto);
+
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      success: true,
+      user: result.user,
+    };
+  }
+
+  @Post('logout')
+  logout(
+    @Res({ passthrough: true })
+    res: Response,
+  ) {
+    res.clearCookie('access_token');
+
+    res.clearCookie('refresh_token');
+
+    return {
+      success: true,
+      message: 'Logout successful',
+    };
   }
 }
