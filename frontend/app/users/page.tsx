@@ -26,7 +26,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getUsers();
+        const {data} = await getUsers();
 
         setUsers(data);
       } catch (err) {
