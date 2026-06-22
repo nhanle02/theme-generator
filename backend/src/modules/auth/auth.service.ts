@@ -112,7 +112,6 @@ export class AuthService {
     }
 
     const tokens = this.generateTokens(user);
-    console.log(tokens);
 
     return {
       user: {

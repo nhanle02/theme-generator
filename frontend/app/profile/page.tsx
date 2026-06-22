@@ -20,7 +20,7 @@ export default function ProfilePage() {
 
       if (!res.ok) return;
 
-      const data = await res.json();
+      const {data} = await res.json();
 
       setName(data.name);
       setEmail(data.email);
@@ -97,7 +97,7 @@ export default function ProfilePage() {
               <input
                 type="file"
                 className="hidden"
-                onChange={handleFileChange}
+                onChange={handleFileChange} 
               />
             </label>
 

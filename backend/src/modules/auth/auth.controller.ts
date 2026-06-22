@@ -39,7 +39,6 @@ export class AuthController {
     });
 
     return {
-      success: true,
       user: result.user,
     };
   }
@@ -54,7 +53,6 @@ export class AuthController {
     res.clearCookie('refresh_token');
 
     return {
-      success: true,
       message: 'Logout successful',
     };
   }
