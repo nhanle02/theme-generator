@@ -26,4 +26,13 @@ export class CloudinaryService {
         .end(file.buffer);
     });
   }
+  async deleteFile(publicId: string): Promise<void> {
+    try {
+      await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+      console.error('Delete cloudinary failed:', error);
+
+      throw error;
+    }
+  }
 }

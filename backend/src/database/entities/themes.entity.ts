@@ -25,6 +25,11 @@ export class Theme {
   preview_url?: string;
 
   @Column({
+    nullable: true,
+  })
+  preview_public_id?: string;
+
+  @Column({
     type: 'text',
     nullable: true,
   })

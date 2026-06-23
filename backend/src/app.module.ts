@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { ConfigModule } from '@nestjs/config';
 import { ScriptsModule } from './modules/scripts/scripts.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ScriptsModule } from './modules/scripts/scripts.module';
     ThemesModule,
     UploadModule,
     AuthModule,
+    AiModule,
     ScriptsModule,
   ],
 })
