@@ -18,11 +18,14 @@ export class ThemesService {
 
   async create(dto: CreateThemeDto, file?: Express.Multer.File) {
     let previewUrl: string | undefined;
+    let previewPublicId: string | undefined;
 
     if (file) {
       const upload = await this.cloudinaryService.uploadFile(file, 'themes');
 
       previewUrl = upload.secure_url;
+
+      previewPublicId = upload.public_id;
     }
 
     const theme = this.themeRepo.create({
@@ -30,6 +33,8 @@ export class ThemesService {
 
       ...(previewUrl && {
         preview_url: previewUrl,
+
+        preview_public_id: previewPublicId,
       }),
     });
 
@@ -55,23 +60,51 @@ export class ThemesService {
 
     let previewUrl: string | undefined;
 
+    let previewPublicId: string | undefined;
+
     if (file) {
+      // xóa ảnh cũ
+      if (theme.preview_public_id) {
+        await this.cloudinaryService.deleteFile(theme.preview_public_id);
+      }
+
       const upload = await this.cloudinaryService.uploadFile(file, 'themes');
 
       previewUrl = upload.secure_url;
+
+      previewPublicId = upload.public_id;
     }
 
     Object.assign(theme, {
       ...dto,
+
       ...(previewUrl && {
         preview_url: previewUrl,
+
+        preview_public_id: previewPublicId,
       }),
     });
 
     return this.themeRepo.save(theme);
   }
 
-  remove(id: number) {
-    return this.themeRepo.delete(id);
+  async remove(id: number) {
+    const theme = await this.themeRepo.findOneBy({
+      id,
+    });
+
+    if (!theme) {
+      throw new Error('Theme not found');
+    }
+
+    if (theme.preview_public_id) {
+      await this.cloudinaryService.deleteFile(theme.preview_public_id);
+    }
+
+    await this.themeRepo.delete(id);
+
+    return {
+      message: 'Theme deleted successfully',
+    };
   }
 }

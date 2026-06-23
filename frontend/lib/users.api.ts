@@ -1,14 +1,21 @@
-export async function getUsers() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/users`,
-    {
-      credentials: "include",
-    }
-  );
+import apiFetch from "./api";
 
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
+export type User = {
+  id:number;
 
-  return res.json();
-}
+  google_id:string;
+
+  email:string;
+
+  name:string;
+
+  avatar_url:string;
+
+  credit_balance:number;
+
+  created_at:string;
+
+  updated_at:string;
+};
+
+export const getUsers = () => apiFetch<User[]>("/users");

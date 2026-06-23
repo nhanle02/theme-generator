@@ -4,11 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-
-import { GoogleGenAI } from '@google/genai';
-
 import { GenerateScriptDto } from './dto/generate-script.dto';
+
+import { AiService } from '../ai/ai.service';
 
 import {
   GenerationHistory,
@@ -17,86 +15,126 @@ import {
 
 @Injectable()
 export class ScriptsService {
-  private ai: GoogleGenAI;
-
   constructor(
     @InjectRepository(GenerationHistory)
     private readonly historyRepository: Repository<GenerationHistory>,
 
-    private readonly configService: ConfigService,
-  ) {
-    this.ai = new GoogleGenAI({
-      apiKey: this.configService.get<string>('GEMINI_API_KEY')!,
-    });
-  }
+    private readonly aiService: AiService,
+  ) {}
 
   async generate(dto: GenerateScriptDto, user: any) {
+    const input = {
+      prompt: dto.description,
+      platform: dto.platform ?? 'TikTok',
+      style: dto.style ?? 'Tự nhiên',
+      duration: dto.duration ?? 30,
+    };
+
     const history = await this.historyRepository.save({
       user_id: user.id,
+
       type: 'script',
 
       status: GenerationStatus.PROCESSING,
 
-      input_json: {
-        description: dto.description,
-      },
+      input_json: input,
 
       credits_used: 1,
     });
 
     try {
-      const script = await this.generateAI(dto.description);
+      const prompt = this.buildPrompt(input);
+
+      const response = await this.aiService.generateText(prompt);
+
+      const script = this.parseResponse(response);
 
       await this.historyRepository.update(history.id, {
         status: GenerationStatus.COMPLETED,
 
         output_json: {
-          script,
-        } as any,
+          result: script,
+        },
       });
 
       return {
-        script,
+        result: script,
       };
     } catch (error) {
+      console.error('Generate script error:', error.message);
+
       await this.historyRepository.update(history.id, {
         status: GenerationStatus.FAILED,
-      });
 
-      console.error(error);
+        output_json: {
+          error: error.message,
+        },
+      });
 
       throw new InternalServerErrorException('Generate script failed');
     }
   }
 
-  private async generateAI(description: string) {
-    const prompt = `
-    Tạo một kịch bản video ngắn.
+  private buildPrompt(input: {
+    prompt: string;
+    platform: string;
+    style: string;
+    duration: number;
+  }) {
+    return `
+  Tạo kịch bản video.
 
-    Yêu cầu:
-    ${description}
+  Thông tin:
 
-    Trả đúng format:
+  Nền tảng:
+  ${input.platform}
 
-    HOOK:
-    BODY:
-    CTA:
-    `;
+  Phong cách:
+  ${input.style}
 
-    const response = await this.ai.models.generateContent({
-      model: this.configService.get<string>('GEMINI_MODEL')!,
+  Độ dài:
+  ${input.duration} giây
 
-      contents: prompt,
-    });
+  Yêu cầu:
+  ${input.prompt}
 
-    return response.text || '';
+  Chỉ trả về JSON hợp lệ.
+
+  {
+    "hook":"",
+    "body":"",
+    "cta":""
   }
+  `;
+  }
+
+  private parseResponse(result: string) {
+    try {
+      const clean = result
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
+      const parsed = JSON.parse(clean);
+
+      return {
+        hook: parsed.hook || '',
+
+        body: parsed.body || '',
+
+        cta: parsed.cta || '',
+      };
+    } catch {
+      throw new Error('Invalid AI response format');
+    }
+  }
+
   async findByUser(userId: number) {
     return this.historyRepository.find({
       where: {
         user_id: userId,
-        type: 'script',
       },
+
       order: {
         created_at: 'DESC',
       },
@@ -104,16 +142,15 @@ export class ScriptsService {
   }
 
   async findOne(id: number, userId: number) {
-    const script = await this.historyRepository.findOne({
+    const item = await this.historyRepository.findOne({
       where: {
         id,
         user_id: userId,
-        type: 'script',
       },
     });
 
     return {
-      data: script,
+      data: item,
     };
   }
 }

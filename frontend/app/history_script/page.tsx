@@ -3,90 +3,191 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Script = {
-  id: number;
-  output_url: string;
-  created_at: string;
-};
+import { GridColDef } from "@mui/x-data-grid";
+
+import Chip from "@mui/material/Chip";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import CommonDataGrid from "@/components/ui/DataGrid";
+import Button from "@/components/ui/Button";
+
+import {
+  Script,
+  getScripts,
+} from "@/lib/scripts.api";
 
 export default function HistoryScriptPage() {
-  const [scripts, setScripts] = useState<Script[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [scripts, setScripts] =
+    useState<Script[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   const router = useRouter();
 
   useEffect(() => {
-    const fetchScripts = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/scripts`,
-          {
-            credentials: "include",
-          }
+        const data =
+          await getScripts();
+
+        setScripts(data);
+
+      } catch (error) {
+        console.error(
+          "Fetch scripts failed:",
+          error
         );
 
-        const {data} = await res.json();
-        console.log(data);
-        setScripts(data);
-      } catch (err) {
-        console.error("Failed to fetch scripts:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchScripts();
+    loadData();
+
   }, []);
 
-  if (loading) {
-    return <div className="p-4">Loading...</div>;
+  const columns: GridColDef[] = [
+    {
+      field: "id",
+      headerName: "ID",
+      width: 70,
+    },
+
+    {
+      field: "prompt",
+      headerName: "Prompt",
+      flex: 1,
+
+      valueGetter: (_, row) =>
+        row?.input_json?.prompt || "-",
+    },
+
+    {
+      field: "platform",
+      headerName: "Platform",
+      width: 120,
+
+      valueGetter: (_, row) =>
+        row?.input_json?.platform || "-",
+    },
+
+    {
+      field: "status",
+      headerName: "Status",
+      width: 130,
+
+      renderCell: (params) => (
+        <Chip
+          size="small"
+          label={params.value}
+          color={
+            params.value === "completed"
+              ? "success"
+              : params.value === "failed"
+              ? "error"
+              : "warning"
+          }
+        />
+      ),
+    },
+
+    {
+      field: "created_at",
+      headerName: "Created",
+      width: 180,
+
+      valueFormatter: (value) =>
+        new Date(value).toLocaleString(),
+    },
+
+    {
+  field:"actions",
+  headerName:"Actions",
+  width:140,
+
+  sortable:false,
+
+  renderCell:(params)=>{
+
+    const script =
+      params.row;
+
+      if(
+        script.status==="failed"
+      ){
+        return (
+          <Chip
+            size="small"
+            label="No Result"
+            color="error"
+          />
+        );
+      }
+
+      if(
+        script.status==="processing"
+      ){
+        return (
+          <Chip
+            size="small"
+            label="Processing"
+            color="warning"
+          />
+        );
+      }
+
+      return (
+
+        <Button
+          variant="primary"
+          onClick={()=>
+            router.push(
+              `/history_script/${script.id}`
+            )
+          }
+        >
+          View
+        </Button>
+
+      );
+    }
   }
+  ];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">Script History</h1>
+    <div className="p-6">
 
-      {scripts.length === 0 ? (
-        <p>No scripts found.</p>
-      ) : (
-        <table className="w-full border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-3 border">ID</th>
-              <th className="p-3 border">Script</th>
-              <th className="p-3 border">Created</th>
-              <th className="p-3 border">Action</th>
-            </tr>
-          </thead>
+      <div className="bg-white rounded-xl shadow-md p-5">
 
-          <tbody>
-            {scripts.map((script) => (
-              <tr key={script.id} className="border-t">
-                <td className="p-3 border">{script.id}</td>
+        <div className="flex items-center justify-between mb-5">
 
-                <td className="p-3 border max-w-md">
-                  <div className="line-clamp-2 text-sm text-gray-700">
-                    {script.output_json || "Processing..."}
-                  </div>
-                </td>
+          <h2 className="text-2xl font-semibold">
+            Script History
+          </h2>
 
-                <td className="p-3 border text-sm text-gray-500">
-                  {new Date(script.created_at).toLocaleString()}
-                </td>
+          <Button
+            variant="primary"
+            onClick={() =>
+              router.push(
+                "/generate-script"
+              )
+            }
+          >
+            Create Script
+          </Button>
 
-                <td className="p-3 border">
-                  <button
-                    onClick={() => router.push(`/history_script/${script.id}`)}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        </div>
+
+        <CommonDataGrid
+          rows={scripts}
+          columns={columns}
+          loading={loading}
+        />
+
+      </div>
+
     </div>
   );
 }
