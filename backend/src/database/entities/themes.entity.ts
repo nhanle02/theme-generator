@@ -22,13 +22,13 @@ export class Theme {
   @Column({
     nullable: true,
   })
-  preview_url: string;
+  preview_url?: string;
 
   @Column({
     type: 'text',
     nullable: true,
   })
-  prompt_template: string;
+  prompt_template?: string;
 
   @Column({
     default: true,

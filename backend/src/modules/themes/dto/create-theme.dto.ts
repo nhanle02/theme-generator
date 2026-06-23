@@ -21,10 +21,6 @@ export class CreateThemeDto {
 
   @IsOptional()
   @IsString()
-  preview_url?: string;
-
-  @IsOptional()
-  @IsString()
   prompt_template?: string;
 
   @IsOptional()

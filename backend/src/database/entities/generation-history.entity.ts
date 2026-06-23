@@ -48,9 +48,10 @@ export class GenerationHistory {
   input_json: Record<string, any>;
 
   @Column({
+    type: 'json',
     nullable: true,
   })
-  output_url: string;
+  output_json: any;
 
   @Column({
     type: 'integer',
