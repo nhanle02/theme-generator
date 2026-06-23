@@ -26,6 +26,24 @@ export class CloudinaryService {
         .end(file.buffer);
     });
   }
+
+  async uploadBuffer(buffer: Buffer, folder: string) {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder,
+            public_id: `${folder}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          },
+        )
+        .end(buffer);
+    });
+  }
+
   async deleteFile(publicId: string): Promise<void> {
     try {
       await cloudinary.uploader.destroy(publicId);

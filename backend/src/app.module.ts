@@ -9,6 +9,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { ConfigModule } from '@nestjs/config';
 import { ScriptsModule } from './modules/scripts/scripts.module';
 import { AiModule } from './modules/ai/ai.module';
+import { ImagesModule } from './modules/images/images.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AiModule } from './modules/ai/ai.module';
     AuthModule,
     AiModule,
     ScriptsModule,
+    ImagesModule,
   ],
 })
 export class AppModule {}

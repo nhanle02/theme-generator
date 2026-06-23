@@ -25,11 +25,15 @@ export class ScriptsService {
   async generate(dto: GenerateScriptDto, user: any) {
     const input = {
       prompt: dto.description,
+
       platform: dto.platform ?? 'TikTok',
+
       style: dto.style ?? 'Tự nhiên',
+
       duration: dto.duration ?? 30,
     };
 
+    // create history
     const history = await this.historyRepository.save({
       user_id: user.id,
 
@@ -37,36 +41,67 @@ export class ScriptsService {
 
       status: GenerationStatus.PROCESSING,
 
-      input_json: input,
+      input_json: {
+        type: 'script',
+
+        prompt: input.prompt,
+
+        metadata: {
+          platform: input.platform,
+
+          style: input.style,
+
+          duration: input.duration,
+        },
+      },
 
       credits_used: 1,
-    });
+    } as Partial<GenerationHistory>);
 
     try {
+      // build AI prompt
       const prompt = this.buildPrompt(input);
 
+      // call AI
       const response = await this.aiService.generateText(prompt);
 
       const script = this.parseResponse(response);
 
-      await this.historyRepository.update(history.id, {
+      // update history
+      await this.historyRepository.save({
+        id: history.id,
+
         status: GenerationStatus.COMPLETED,
 
         output_json: {
-          result: script,
+          status: 'success',
+
+          result: {
+            hook: script.hook,
+
+            body: script.body,
+
+            cta: script.cta,
+          },
+
+          model: 'gemini-text',
         },
       });
 
       return {
-        result: script,
+        data: script,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Generate script error:', error.message);
 
-      await this.historyRepository.update(history.id, {
+      await this.historyRepository.save({
+        id: history.id,
+
         status: GenerationStatus.FAILED,
 
         output_json: {
+          status: 'error',
+
           error: error.message,
         },
       });
@@ -82,30 +117,30 @@ export class ScriptsService {
     duration: number;
   }) {
     return `
-  Tạo kịch bản video.
+      Tạo kịch bản video.
 
-  Thông tin:
+      Thông tin:
 
-  Nền tảng:
-  ${input.platform}
+      Nền tảng:
+      ${input.platform}
 
-  Phong cách:
-  ${input.style}
+      Phong cách:
+      ${input.style}
 
-  Độ dài:
-  ${input.duration} giây
+      Độ dài:
+      ${input.duration} giây
 
-  Yêu cầu:
-  ${input.prompt}
+      Yêu cầu:
+      ${input.prompt}
 
-  Chỉ trả về JSON hợp lệ.
+      Chỉ trả về JSON hợp lệ:
 
-  {
-    "hook":"",
-    "body":"",
-    "cta":""
-  }
-  `;
+      {
+        "hook":"",
+        "body":"",
+        "cta":""
+      }
+    `;
   }
 
   private parseResponse(result: string) {
