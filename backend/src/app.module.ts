@@ -7,12 +7,13 @@ import { UploadModule } from './modules/uploads/uploads.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { ConfigModule } from '@nestjs/config';
+import { ScriptsModule } from './modules/scripts/scripts.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       ...typeOrmConfig,
-      autoLoadEntities: true, // 🔥 THÊM DÒNG NÀY
+      autoLoadEntities: true,
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
     ThemesModule,
     UploadModule,
     AuthModule,
+    ScriptsModule,
   ],
 })
 export class AppModule {}

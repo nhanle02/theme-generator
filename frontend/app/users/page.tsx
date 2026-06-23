@@ -102,6 +102,12 @@ export default function UsersPage() {
     <div className="p-6">
       <Button
         variant="primary"
+        onClick={() => router.push("/history_script")}
+      >
+        Go to history
+      </Button>
+      <Button
+        variant="primary"
         onClick={() => router.push("/profile")}
       >
         Go to Profile
