@@ -50,18 +50,49 @@ export class AiService {
     throw new InternalServerErrorException('Failed after retries');
   }
 
-  async generateImage(prompt: string) {
+  async generateImage(prompt: string, imageBase64?: string) {
     try {
-      const response = await this.ai.models.generateContent({
-        model: this.configService.get<string>('GEMINI_IMAGE_MODEL')!,
+      const parts: any[] = [];
 
-        contents: prompt,
+      // 1. add image nếu có
+      if (imageBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: 'image/png',
+            data: imageBase64,
+          },
+        });
+      }
+
+      // 2. add text prompt
+      parts.push({
+        text: prompt,
       });
 
-      return response;
+      const response = await this.ai.models.generateContent({
+        model: this.configService.get<string>('GEMINI_IMAGE_MODEL')!,
+        contents: [
+          {
+            role: 'user',
+            parts,
+          },
+        ],
+      });
+
+      const candidate = response?.candidates?.[0];
+      const imagePart = candidate?.content?.parts?.find(
+        (p: any) => p.inlineData,
+      );
+
+      if (!imagePart?.inlineData?.data) {
+        throw new Error('No image returned');
+      }
+
+      return {
+        base64: imagePart.inlineData.data,
+      };
     } catch (error) {
       console.error(error);
-
       throw new InternalServerErrorException('Generate image failed');
     }
   }

@@ -45,13 +45,47 @@ export class GenerationHistory {
     type: 'json',
     nullable: true,
   })
-  input_json: Record<string, any>;
+  input_json: {
+    type?: 'script' | 'image' | 'video';
+
+    prompt?: string;
+
+    description?: string;
+
+    theme_id?: number;
+
+    theme_name?: string;
+
+    input_image_url?: string;
+
+    metadata?: {
+      platform?: string;
+      style?: string;
+      duration?: number;
+    };
+  };
 
   @Column({
     type: 'json',
     nullable: true,
   })
-  output_json: any;
+  output_json: {
+    status?: 'success' | 'error';
+
+    result?: {
+      hook?: string;
+      body?: string;
+      cta?: string;
+
+      image_url?: string;
+
+      video_url?: string;
+    };
+
+    error?: string;
+
+    model?: string;
+  };
 
   @Column({
     type: 'integer',
