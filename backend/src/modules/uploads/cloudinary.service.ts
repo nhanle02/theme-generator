@@ -27,7 +27,10 @@ export class CloudinaryService {
     });
   }
 
-  async uploadBuffer(buffer: Buffer, folder: string) {
+  async uploadBuffer(
+    buffer: Buffer,
+    folder: string,
+  ): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -35,9 +38,13 @@ export class CloudinaryService {
             folder,
             public_id: `${folder}-${Date.now()}`,
           },
+
           (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
+            if (error) {
+              return reject(error);
+            }
+
+            resolve(result as UploadApiResponse);
           },
         )
         .end(buffer);

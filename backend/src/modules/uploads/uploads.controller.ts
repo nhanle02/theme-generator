@@ -16,13 +16,13 @@ export class UploadController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  async upload(
+  async uploadFile(
     @UploadedFile()
     file: Express.Multer.File,
 
     @Body('folder')
     folder: string,
   ) {
-    return this.uploadService.upload(file, folder || 'uploads');
+    return this.uploadService.uploadFile(file, folder || 'uploads');
   }
 }

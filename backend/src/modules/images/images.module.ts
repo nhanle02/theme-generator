@@ -8,11 +8,15 @@ import { GenerationHistory } from 'src/database/entities/generation-history.enti
 
 import { AiModule } from '../ai/ai.module';
 import { Theme } from 'src/database/entities/themes.entity';
-import { CloudinaryService } from '../uploads/cloudinary.service';
+import { UploadModule } from '../uploads/uploads.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Theme, GenerationHistory]), AiModule],
+  imports: [
+    TypeOrmModule.forFeature([Theme, GenerationHistory]),
+    AiModule,
+    UploadModule,
+  ],
   controllers: [ImagesController],
-  providers: [ImagesService, CloudinaryService],
+  providers: [ImagesService],
 })
 export class ImagesModule {}
