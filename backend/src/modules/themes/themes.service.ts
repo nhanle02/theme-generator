@@ -6,14 +6,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Theme } from 'src/database/entities/themes.entity';
-import { CloudinaryService } from '../uploads/cloudinary.service';
+import { UploadService } from '../uploads/uploads.service';
 
 @Injectable()
 export class ThemesService {
   constructor(
     @InjectRepository(Theme)
     private themeRepo: Repository<Theme>,
-    private cloudinaryService: CloudinaryService,
+    private uploadService: UploadService,
   ) {}
 
   async create(dto: CreateThemeDto, file?: Express.Multer.File) {
@@ -21,9 +21,9 @@ export class ThemesService {
     let previewPublicId: string | undefined;
 
     if (file) {
-      const upload = await this.cloudinaryService.uploadFile(file, 'themes');
+      const upload = await this.uploadService.uploadFile(file, 'themes');
 
-      previewUrl = upload.secure_url;
+      previewUrl = upload.url;
 
       previewPublicId = upload.public_id;
     }
@@ -65,12 +65,12 @@ export class ThemesService {
     if (file) {
       // xóa ảnh cũ
       if (theme.preview_public_id) {
-        await this.cloudinaryService.deleteFile(theme.preview_public_id);
+        await this.uploadService.deleteFile(theme.preview_public_id);
       }
 
-      const upload = await this.cloudinaryService.uploadFile(file, 'themes');
+      const upload = await this.uploadService.uploadFile(file, 'themes');
 
-      previewUrl = upload.secure_url;
+      previewUrl = upload.url;
 
       previewPublicId = upload.public_id;
     }
@@ -98,7 +98,7 @@ export class ThemesService {
     }
 
     if (theme.preview_public_id) {
-      await this.cloudinaryService.deleteFile(theme.preview_public_id);
+      await this.uploadService.deleteFile(theme.preview_public_id);
     }
 
     await this.themeRepo.delete(id);

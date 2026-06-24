@@ -4,14 +4,14 @@ import { Repository } from 'typeorm';
 import { User } from 'src/database/entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
-import { CloudinaryService } from '../uploads/cloudinary.service';
+import { UploadService } from '../uploads/uploads.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
-    private readonly cloudinaryService: CloudinaryService,
+    private readonly uploadService: UploadService,
   ) {}
 
   findAll() {
@@ -70,12 +70,12 @@ export class UsersService {
 
     // 🔥 upload avatar nếu có file
     if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(
+      const uploaded = await this.uploadService.uploadFile(
         file,
         'avatars',
       );
 
-      updateData.avatar_url = uploadResult.secure_url;
+      updateData.avatar_url = uploaded.url;
     }
 
     if (updateUserDto.password) {

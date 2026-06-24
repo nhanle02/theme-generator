@@ -12,9 +12,8 @@ import {
 
 import { Theme } from 'src/database/entities/themes.entity';
 
-import { CloudinaryService } from '../uploads/cloudinary.service';
-
 import { GenerateImageDto } from './dto/generate-image.dto';
+import { UploadService } from '../uploads/uploads.service';
 
 @Injectable()
 export class ImagesService {
@@ -27,7 +26,7 @@ export class ImagesService {
 
     private readonly aiService: AiService,
 
-    private readonly cloudinaryService: CloudinaryService,
+    private readonly uploadService: UploadService,
   ) {}
 
   async generate(file: Express.Multer.File, dto: GenerateImageDto, user: any) {
@@ -47,8 +46,8 @@ export class ImagesService {
     let inputImageUrl: string | undefined;
 
     if (file) {
-      const upload = await this.cloudinaryService.uploadFile(file, 'inputs');
-      inputImageUrl = upload.secure_url;
+      const upload = await this.uploadService.uploadFile(file, 'inputs');
+      inputImageUrl = upload.url;
     }
 
     // 3. Create history
@@ -84,12 +83,12 @@ export class ImagesService {
       const buffer = Buffer.from(aiResult.base64, 'base64');
 
       // 8. Upload to Cloudinary
-      const uploadResult: any = await this.cloudinaryService.uploadBuffer(
+      const uploadResult: any = await this.uploadService.uploadBuffer(
         buffer,
         'outputs',
       );
 
-      const outputUrl = uploadResult.secure_url;
+      const outputUrl = uploadResult.url;
 
       // 9. Update history
       await this.historyRepository.save({
